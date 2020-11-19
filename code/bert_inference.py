@@ -49,7 +49,10 @@ def model_fn(model_dir):
     # Set dropout to non-zero, to match pretrained model parameter names
     net = nlp.model.BERTClassifier(bert, dropout=0.1)
     net.load_parameters(os.path.join(model_dir, 'bert_sst.params'), mx.cpu(0))
-    net.hybridize()
+    net.hybridize(static_alloc=True, static_shape=True)
+    
+    # pass some sample through the net
+    
 
     return net, sentence_transform, batchify
 
@@ -75,12 +78,10 @@ def transform_fn(model, data, input_content_type, output_content_type):
     
     tic = time.time()
     inference_output = net(inputs, token_types, valid_length.astype('float32'))
-    
-    inference_output = inference_output.as_in_context(mx.cpu())
-    predictions = mx.nd.softmax(inference_output).argmax(axis=1).astype('int').asnumpy().tolist()
+    predictions = mx.nd.softmax(inference_output).argmax(axis=1).astype('int').asnumpy()
     toc = time.time() - tic
     
     return {
-        "predictions":predictions, 
+        "predictions":predictions.tolist(), 
             "time": toc
            }
