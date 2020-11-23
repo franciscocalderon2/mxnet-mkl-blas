@@ -46,14 +46,16 @@ def model_fn(model_dir):
         nlp.data.batchify.Pad(axis=0,
                               pad_val=vocab[vocab.padding_token]),  # input
         nlp.data.batchify.Stack(),  # length
-        nlp.data.batchify.Pad(axis=0, pad_val=0))  # segment
+        nlp.data.batchify.Pad(axis=0, pad_val=0))
+    # segment
     # Set dropout to non-zero, to match pretrained model parameter names
     #net = nlp.model.BERTClassifier(bert, dropout=0.1)
     net = mx.gluon.SymbolBlock.imports('{}-symbol.json'.format(prefix), 
                                     ['data0', 'data1', 'data2'],
                                     '{}-0000.params'.format(prefix))
     #net.load_parameters(os.path.join(model_dir, 'bert_sst_quantized.params'), mx.cpu(0))
-    net.hybridize()
+    net.hybridize(static_alloc=True, static_shape=True)
+    
 
     return net, sentence_transform, batchify
 

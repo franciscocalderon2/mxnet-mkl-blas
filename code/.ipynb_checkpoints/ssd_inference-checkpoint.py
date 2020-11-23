@@ -30,12 +30,13 @@ def model_fn(model_dir):
     :param: model_dir The directory where model files are stored.
     """
     model_name = "ssd_512_resnet50_v1_voc"
-    ctx = mx.cpu(0)
+    ctx = mx.gpu(0)
     architecure = os.path.join(model_dir, "{}-symbol.json".format(model_name))
     params = os.path.join(model_dir, "{}-0000.params".format(model_name))
     net = mx.gluon.nn.SymbolBlock.imports(architecure, ['data'], params, ctx=ctx)
     net.hybridize(static_alloc=True,static_shape=True)
-    res = net(mx.nd.zeros((1,3,512,512))
+    x =  mx.nd.zeros((1,3,512,512)).as_in_context(ctx)
+    res = net(x)
               
     return net
 
@@ -67,6 +68,13 @@ def transform_fn(net, data, input_content_type, output_content_type):
     print(nda.shape)
 #     nda = nda.copyto(gpu(0))
     
+    
+    net.collect_params().reset_ctx(mx.gpu())
+    net.hybridize(static_alloc=True,static_shape=True)
+    x =  mx.nd.zeros((1,3,512,512)).as_in_context(mx.gpu())
+    res = net(x)
+    
+    nda = nda.as_in_context(mx.gpu(0))
     # predictions
     tic = time.time()
     cid, score, bbox = net(nda)    

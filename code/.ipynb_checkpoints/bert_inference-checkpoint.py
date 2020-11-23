@@ -49,6 +49,8 @@ def model_fn(model_dir):
     # Set dropout to non-zero, to match pretrained model parameter names
     net = nlp.model.BERTClassifier(bert, dropout=0.1)
     net.load_parameters(os.path.join(model_dir, 'bert_sst.params'), mx.cpu(0))
+    
+    # 
     net.hybridize(static_alloc=True, static_shape=True)
     
     # pass some sample through the net
